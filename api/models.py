@@ -4,9 +4,9 @@ from django.db import models
 from django.utils import timezone
 
 class Todo(models.Model):
-    HIGH = 3
+    HIGH = 1
     MIDDLE = 2
-    LOW = 1
+    LOW = 3
     PRIORITY = (
         (HIGH, 'High'),
         (MIDDLE, 'Middle'),

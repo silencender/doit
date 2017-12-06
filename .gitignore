@@ -102,3 +102,10 @@ ENV/
 
 # VSC
 .vscode/
+
+# JS bundles
+bundles/
+
+# NodeJS modules
+
+node_modules/
