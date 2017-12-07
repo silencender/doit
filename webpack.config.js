@@ -45,7 +45,7 @@ module.exports = {
             // on all css files
             {
                 test: /\.css$/,
-                use: 'style-loader!css-loader'
+                use: ['style-loader', 'css-loader']
             },
             {
                 test: /\.png$/,
