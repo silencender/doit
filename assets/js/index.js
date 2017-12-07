@@ -19,6 +19,11 @@ class TodoStore {
             priority: todo.priority
         });
     }
+
+    setTodo(i,todo) {
+        todo.content != "" && todo.expireDate != "" && todo.priority != "" && todo.finished != null &&
+        (this.todos[i] = todo);
+    }
 }
 
 
@@ -26,55 +31,103 @@ const todoStore = new TodoStore();
 
 @observer
 class TodoList extends React.Component {
+    @observable mode = ["list",0];
     constructor(props) {
         super(props);
-        this.defaultTodo = {
+        this.defaultNewTodo = {
             content: "",
             expireDate: "",
             priority: "3",
         };
         this.state = {
-            editingTodo: Object.assign({}, this.defaultTodo),
+            newTodo: Object.assign({}, this.defaultNewTodo),
+            editingTodo: null,
         };
     }
     render() {
         const store = this.props.store;
         return (
-            <Router>
                 <div>
                     <ul>
                         {store.todos.map(
-                            (todo, idx) => <TodoView todo={todo} key={idx} />
+                            (todo, idx) => <div key={idx}>
+                                            {
+                                                (this.mode[0] == "list" || this.mode[0] == "add") &&
+                                                < TodoView todo = {todo}
+                                                onClick = {
+                                                    () => {
+                                                        this.mode[0] = "edit";
+                                                        this.mode[1] = idx;
+                                                        const newTodo = this.state.newTodo;
+                                                        this.setState({
+                                                            newTodo: newTodo,
+                                                            editingTodo: Object.assign({}, todo)
+                                                        });
+                                                    }
+                                                }
+                                                />
+                                            }
+                                            {                                                
+                                                this.mode[0] == "edit" && this.mode[1] == idx &&
+                                                <span key={idx}>
+                                                    <EditTodoView todo={this.state.editingTodo} onChange={this.handleEditChange}/>
+                                                    <button onClick={this.onEditTodo(idx)}>Save</button>
+                                                    <button onClick={()=>this.mode[0]="list"}>Cancel</button>
+                                                </span>
+                                            }
+                                            </div>
                         )}
                     </ul>
-                    <Route exact path="/" render={() => <div>
-                                                            <Link to="/add">Add Todo</Link>
-                                                        </div>} />
-                    <Route path="/add" render={() =>
-                                                    <div>
-                                                        <AddTodoView todo={this.state.editingTodo} onChange={this.handleChange}/>
-                                                        <button onClick={this.onNewTodo}>Add Todo</button>
-                                                        <Link to="/">Cancel</Link>
-                                                    </div>} />
+                    {
+                        (this.mode[0] == "list" || this.mode[0] == "edit") && < div >
+                                    < button onClick = {
+                                        () => this.mode[0] = "add"
+                                    } > Add Todo </button>
+                                </div>
+                    }
+                    {
+                        (this.mode[0] == "add") &&  < div >
+                                    <EditTodoView todo={this.state.newTodo} onChange={this.handleAddChange}/>
+                                    <button onClick={this.onNewTodo}>Add Todo</button>
+                                    <button onClick={()=>this.mode[0]="list"}>Cancel</button>
+                                </div>
+                    }
                 </div>
-            </Router>
         );
     }
 
     onNewTodo = () => {
         const store = this.props.store;
-        store.addTodo(this.state.editingTodo);
+        store.addTodo(this.state.newTodo);
         this.resetNewTodo();
     }
 
-    handleChange = (e,info) => {
+    onEditTodo = (i) => {
+        return () => {
+            const store = this.props.store;
+            store.setTodo(i,this.state.editingTodo);
+            this.mode[0] = "list";
+        }
+    }
+
+    handleAddChange = (e,info) => {
+        const todo = Object.assign({}, this.state.newTodo);
+        todo[info] = e.target.value;
+        this.setState({newTodo: todo});
+    }
+
+    handleEditChange = (e, info) => {
         const todo = Object.assign({}, this.state.editingTodo);
         todo[info] = e.target.value;
-        this.setState({editingTodo: todo});
+        this.setState({
+            editingTodo: todo
+        });
     }
 
     resetNewTodo = () => {
-        this.setState({ editingTodo: this.defaultTodo});
+        this.setState({
+            newTodo: Object.assign({}, this.defaultNewTodo),
+        });
     }
 }
 
@@ -89,7 +142,7 @@ class TodoView extends React.Component {
                     checked={todo.completed}
                     onChange={this.onToggleCompleted}
                 />
-                {todo.content}
+                <span onClick={this.props.onClick}>{todo.content}</span>
                 {todo.expireDate}
                 {todo.priority}
             </li>
@@ -102,7 +155,7 @@ class TodoView extends React.Component {
     }
 }
 
-class AddTodoView extends React.Component {
+class EditTodoView extends React.Component {
     render() {
         const todo = this.props.todo;
         const onChange = this.props.onChange;
