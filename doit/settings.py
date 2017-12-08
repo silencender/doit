@@ -97,7 +97,7 @@ DATABASES = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Shanghai'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -119,7 +119,6 @@ STATICFILES_DIRS = (
 # http://www.django-rest-framework.org/
 
 REST_FRAMEWORK = {
-    'PAGE_SIZE': 10
 }
 
 # Webpack Loader

@@ -1,0 +1,46 @@
+.container {
+    max-width:667px;
+}
+
+.navbar {
+    background-color: #3d3d3d;
+    border-color: #414141;
+}
+
+.btn, .form-control {
+    border-radius: 1px;
+}
+
+.btn:focus, .form-control:focus {
+    box-shadow: none;
+}
+
+.submit_btn, .submit_btn:hover {
+    margin-right: 5px;
+    margin-top: 5px;
+    background-color: #3d3d3d;
+    color: #fff !important;
+}
+
+td {
+    vertical-align: middle !important;
+    border-top: none !important;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+td.content {
+    cursor: text;
+}
+
+td.expire-date, td.priority {
+    text-align: right;
+    cursor: text;
+}
+
+.cancel {
+    color: #555;
+    font-size: 13px;
+    padding: 2px 5px;
+    text-decoration: none;
+    white-space: nowrap;
+}

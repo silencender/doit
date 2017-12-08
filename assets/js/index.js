@@ -1,30 +1,82 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { observable } from 'mobx';
+import { observable, autorun } from 'mobx';
 import { observer } from 'mobx-react';
-import { Button } from 'reactstrap';
+import { Button, Grid, Row, Col, Form, FormGroup, FormControl, Navbar, Nav, NavItem, Checkbox, Table } from 'react-bootstrap';
+var DatePicker = require("react-bootstrap-date-picker");
+
 import 'bootstrap/dist/css/bootstrap.css';
+import '../css/style.css';
+
+const api = "/api/";
 
 class TodoStore {
     @observable todos = [];
+    constructor() {
+        fetch(api)
+        .then(response => {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.json();
+        }).then(data => {
+            this.todos = data;
+        }).catch(error => {
+            console.log(error);
+        });
+    }
 
     addTodo(todo) {
-        todo.id != null && todo.content != "" && todo.expireDate != "" && todo.priority!="" && this.todos.push({
-            id: todo.id,
-            content: todo.content,
-            finished: false,
-            expireDate: todo.expireDate,
-            priority: todo.priority
-        });
+        todo.id != null && todo.content != "" && todo.expireDate != "" && todo.priority!="" &&
+            fetch(api, {
+                method: 'post',
+                body: JSON.stringify(todo)
+            }).then(response => {
+                    if (!response.ok) {
+                        throw Error(response.statusText);
+                    }
+                    return response;
+                }).then(data => {
+                    this.todos.push({
+                        id: todo.id,
+                        content: todo.content,
+                        finished: false,
+                        expireDate: todo.expireDate,
+                        priority: todo.priority
+                    });
+                }).catch(error => {
+                    console.log(error);
+                });
+
     }
 
     setTodo(i,todo) {
         todo.id != null && todo.content != "" && todo.expireDate != "" && todo.priority != "" && todo.finished != null &&
-        (this.todos[i] = todo);
+            fetch(api + parseInt(todo.id) + "/", {method: 'put'})
+                .then(response => {
+                    if (!response.ok) {
+                        throw Error(response.statusText);
+                    }
+                    return response.json();
+                }).then(data => {
+                    this.todos[i] = todo
+                }).catch(error => {
+                    console.log(error);
+                });
     }
 
     delTodo(i) {
-        this.todos.splice(i,1);
+        fetch(api + parseInt(todos[i].id + "/"), { method: 'delete' })
+            .then(response => {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json();
+            }).then(data => {
+                this.todos.splice(i, 1);
+            }).catch(error => {
+                console.log(error);
+            });
     }
 }
 
@@ -37,10 +89,13 @@ class TodoList extends React.Component {
     constructor(props) {
         super(props);
         this.id = 0;
+        for (const todo in this.props.store.todos) {
+            this.id <= todo.id && (this.id = todo.id + 1);
+        }
         this.defaultNewTodo = {
-            id: 0,
+            id: this.id,
             content: "",
-            expireDate: "",
+            expireDate: new Date().toISOString(),
             priority: "3",
         };
         this.state = {
@@ -51,11 +106,14 @@ class TodoList extends React.Component {
     render() {
         const store = this.props.store;
         return (
-                <div>
-                    <ul>
+            <div>
+            <NavBarView />
+            <Grid>
                         {store.todos.map(
                             (todo, idx) => 
-                                    <div key={todo.id}>
+                            <Row>
+                                <Table key={todo.id} condensed={true}>
+                                <tbody>
                                 {
                                     (this.mode[0] == "list" || this.mode[0] == "add" || (this.mode[0] == "edit" && this.mode[1] != idx)) &&
                                     < TodoView todo = {todo}
@@ -72,29 +130,34 @@ class TodoList extends React.Component {
                                 {                                                
                                     this.mode[0] == "edit" && this.mode[1] == idx &&
                                     <div>
-                                        <EditTodoView todo={this.state.editingTodo} onChange={this.handleEditChange}/>
-                                        <Button color="primary" onClick={this.onEditTodo(idx)}>Save</Button>
-                                        <Button color="secondary" onClick={()=>this.mode[0]="list"}>Cancel</Button>
-                                        <Button color="danger"onClick={this.onDelTodo(idx)}>Delete</Button>
+                                        <EditTodoView todo={this.state.editingTodo} onChange={this.handleEditChange} onDatePick={this.onEditDatePick}/>
+                                        <Button onClick={this.onEditTodo(idx)}>Save</Button>
+                                        <Button onClick={()=>this.mode[0]="list"}>Cancel</Button>
+                                        <Button onClick={this.onDelTodo(idx)}>Delete</Button>
                                     </div>
                                 }
-                                </div>
-                        )}
-                    </ul>
-                    {
-                        (this.mode[0] == "list" || this.mode[0] == "edit") && 
-                        < div >
-                            < Button color="primary" onClick = {() => this.mode[0] = "add"} > Add Todo </Button>
-                        </div>
-                    }
+                                </tbody>
+                                </Table>
+                            </Row>
+                                )}
+                            {
+                                (this.mode[0] == "list" || this.mode[0] == "edit") && 
+                                <Row>
+                                <Col>< Button bsStyle="link" onClick = {() => this.mode[0] = "add"} >+ Add Todo </Button></Col>
+                                </Row>
+                            }
                     {
                         (this.mode[0] == "add") &&  
-                        < div >
-                            <EditTodoView todo={this.state.newTodo} onChange={this.handleAddChange}/>
-                            <Button color="primary" onClick={this.onNewTodo}>Add Todo</Button>
-                            <Button color="secondary" onClick={()=>this.mode[0]="list"}>Cancel</Button>
-                        </div>
+                    < span ><Row>
+                            <EditTodoView todo={this.state.newTodo} onChange={this.handleAddChange}  onDatePick={this.onNewDatePick} />
+                        </Row>
+                        <Row>
+                            <Col><Button className="submit_btn" onClick={this.onNewTodo}>Add Todo</Button>
+                                <Button className="cancel" bsStyle="link" onClick={()=>this.mode[0]="list"}>Cancel</Button></Col>
+                        </Row>
+                        </span>
                     }
+                    </Grid>
                 </div>
         );
     }
@@ -121,6 +184,20 @@ class TodoList extends React.Component {
             this.mode[0] = "list";
         }
     };
+
+    onNewDatePick = (value, formattedValue) => {
+        const todo = Object.assign({}, this.state.newTodo);
+        const editingTodo = this.state.editingTodo;
+        todo.expireDate = value;
+        this.setState({newTodo: todo,editingTodo: editingTodo});
+    };
+
+    onEditDatePick = (value) => {
+        const todo = Object.assign({}, this.state.editingTodo);
+        const newTodo = this.state.newTodo;
+        todo.expireDate = value;
+        this.setState({ newTodo: newTodo, editingTodo: todo });
+    }
 
     handleAddChange = (e,info) => {
         const todo = Object.assign({}, this.state.newTodo);
@@ -155,15 +232,17 @@ class TodoView extends React.Component {
     render() {
         const todo = this.props.todo;
         return (
-            <li>
-                <input
-                    type="checkbox"
-                    checked={todo.completed}
-                />
-                <span onClick={this.props.onClick}>{todo.content}</span>
-                {todo.expireDate}
-                {todo.priority}
-            </li>
+            <tr>
+                <td className="checkbox">
+                    <Checkbox checked={todo.completed}></Checkbox>
+                </td><td className="content" onClick={this.props.onClick}>
+                    {todo.content}
+                </td><td className="expire-date" onClick={this.props.onClick}>
+                    {todo.expireDate}
+                </td><td className="priority" onClick={this.props.onClick}>
+                    {todo.priority}
+                </td>
+            </tr>
         );
     }
 
@@ -177,12 +256,47 @@ class EditTodoView extends React.Component {
     render() {
         const todo = this.props.todo;
         const onChange = this.props.onChange;
+        const onDatePick = this.props.onDatePick;
         return (
-            <li>
-                <input type="text" value={todo.content} onChange={(e) => onChange(e,"content")}/>
-                <input type="text" value={todo.expireDate} onChange={(e) => onChange(e, "expireDate")}/>
-                <input type="text" value={todo.priority} onChange={(e) => onChange(e, "priority")}/>
-            </li>
+                <Col>
+                < Form inline >
+                <FormGroup>
+                    <FormControl type="text" value={todo.content} onChange={(e) => onChange(e, "content")}></FormControl>
+                </FormGroup>
+
+                <FormGroup>
+                    <DatePicker dateFormat="YYYY/MM/DD" value={todo.expireDate} onChange={onDatePick} showClearButton={false}/>
+                </FormGroup>
+
+                <FormGroup>
+                        <FormControl componentClass="select" placeholder="Priority" value={todo.priority} onChange={(e) => onChange(e, "priority")}>
+                            <option value="1">High</option>
+                            <option value="2">Midium</option>
+                            <option value="3">Low</option>
+                        </FormControl>
+                </FormGroup>
+                </Form>
+                </Col>
+        );
+    }
+}
+
+class NavBarView extends React.Component {
+    render() {
+        return (
+            <Navbar collapseOnSelect>
+                <Navbar.Header>
+                    <Navbar.Brand>
+                        <a href="#">DOIT</a>
+                    </Navbar.Brand>
+                    <Navbar.Toggle />
+                </Navbar.Header>
+                <Navbar.Collapse>
+                    <Nav pullRight>
+                        <NavItem eventKey={1} href="https://github.com/silencender/doit">GitHub</NavItem>
+                    </Nav>
+                </Navbar.Collapse>
+            </Navbar>
         );
     }
 }
