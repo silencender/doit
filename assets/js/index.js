@@ -43,6 +43,10 @@ class TodoStore {
                 else return false;
             }
         });
+/*         this.todos = this.todos.sort((todo1, todo2) => {
+            if (this.sortBy == 'date') return new Date(todo1.expire_date) > new Date(todo2.expire_date);
+            else if (this.sortBy == 'priority') return todo1.priority > todo2.priority;
+        }); */
     }
 
     addTodo(todo) {
