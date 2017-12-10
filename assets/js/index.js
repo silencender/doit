@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { observable, autorun } from 'mobx';
+import { observable, autorun, action } from 'mobx';
 import { observer } from 'mobx-react';
-import { Button, Grid, Row, Col, Form, FormGroup, FormControl, Navbar, Nav, NavItem, Checkbox, Table } from 'react-bootstrap';
+import { Button, Grid, Row, Col, Form, FormGroup, FormControl, Navbar, Nav, NavItem, Checkbox, Table, ButtonGroup, Label } from 'react-bootstrap';
 var DatePicker = require("react-bootstrap-date-picker");
 
 import 'bootstrap/dist/css/bootstrap.css';
@@ -12,66 +12,81 @@ const api = "/api/";
 
 class TodoStore {
     @observable todos = [];
+    
     constructor() {
+        this.sortBy = "date";
         fetch(api)
-        .then(response => {
-            if (!response.ok) {
-                throw Error(response.statusText);
+            .then(response => {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json();
+            }).then(data => {
+                this.todos = data;
+                this.sortTodo();
+            }).catch(error => {
+                console.log(error);
+            });
+    }
+
+    @action
+    sortTodo() {
+        this.todos = this.todos.sort((todo1, todo2) => {
+            if (this.sortBy == 'date') {
+                if (new Date(todo1.expire_date) > new Date(todo2.expire_date)) return true;
+                else if (todo1.expire_date == todo2.expire_date) return todo1.priority > todo2.priority;
+                else return false;
             }
-            return response.json();
-        }).then(data => {
-            this.todos = data;
-        }).catch(error => {
-            console.log(error);
+            else if (this.sortBy == 'priority') {
+                if (todo1.priority > todo2.priority) return true;
+                else if (todo1.priority > todo2.priority) return new Date(todo1.expire_date) > new Date(todo2.expire_date);
+                else return false;
+            }
         });
     }
 
     addTodo(todo) {
-        todo.id != null && todo.content != "" && todo.expireDate != "" && todo.priority!="" &&
-            fetch(api, {
-                method: 'post',
-                body: JSON.stringify(todo)
-            }).then(response => {
-                    if (!response.ok) {
-                        throw Error(response.statusText);
-                    }
-                    return response;
-                }).then(data => {
-                    this.todos.push({
-                        id: todo.id,
-                        content: todo.content,
-                        finished: false,
-                        expireDate: todo.expireDate,
-                        priority: todo.priority
-                    });
-                }).catch(error => {
-                    console.log(error);
-                });
-
+        console.log(todo);
+        todo.id != null && todo.content != "" && todo.expire_date != "" && todo.priority != "" &&
+            fetch(api, { method: 'post', body: JSON.stringify(todo), headers: { 'Content-Type': 'application/json' }})
+            .then(response => {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json();
+            }).then(data => {
+                this.todos.push(data);
+                this.sortTodo();
+            }).catch(error => {
+                console.log(error);
+            });
     }
 
-    setTodo(i,todo) {
-        todo.id != null && todo.content != "" && todo.expireDate != "" && todo.priority != "" && todo.finished != null &&
-            fetch(api + parseInt(todo.id) + "/", {method: 'put'})
+    setTodo(i, todo) {
+        todo.id != null && todo.content != "" && todo.expire_date != "" && todo.priority != "" && todo.finished != null &&
+            fetch(api + parseInt(todo.id) + "/", { method: 'put', body: JSON.stringify(todo), headers: { 'Content-Type': 'application/json' }})
                 .then(response => {
                     if (!response.ok) {
                         throw Error(response.statusText);
                     }
                     return response.json();
                 }).then(data => {
-                    this.todos[i] = todo
+                    this.todos[i] = todo;
+                    this.sortTodo();
                 }).catch(error => {
                     console.log(error);
                 });
     }
 
     delTodo(i) {
-        fetch(api + parseInt(todos[i].id + "/"), { method: 'delete' })
+        fetch(api + parseInt(this.todos[i].id) + "/", {
+            method: 'delete'
+        })
             .then(response => {
                 if (!response.ok) {
                     throw Error(response.statusText);
                 }
-                return response.json();
+                return response;
             }).then(data => {
                 this.todos.splice(i, 1);
             }).catch(error => {
@@ -88,14 +103,11 @@ class TodoList extends React.Component {
     @observable mode = ["list",0];
     constructor(props) {
         super(props);
-        this.id = 0;
-        for (const todo in this.props.store.todos) {
-            this.id <= todo.id && (this.id = todo.id + 1);
-        }
         this.defaultNewTodo = {
-            id: this.id,
+            id: 0,
             content: "",
-            expireDate: new Date().toISOString(),
+            finished: false,
+            expire_date: new Date().toISOString().substring(0,10),
             priority: "3",
         };
         this.state = {
@@ -109,41 +121,52 @@ class TodoList extends React.Component {
             <div>
             <NavBarView />
             <Grid>
+                <Row>
+                    <Col><SortView store={store}/></Col>
+                </Row>
                         {store.todos.map(
                             (todo, idx) => 
-                            <Row>
-                                <Table key={todo.id} condensed={true}>
-                                <tbody>
+                                <div key={todo.id}>
                                 {
                                     (this.mode[0] == "list" || this.mode[0] == "add" || (this.mode[0] == "edit" && this.mode[1] != idx)) &&
-                                    < TodoView todo = {todo}
-                                    onClick = {() => {
-                                            this.mode = ["edit",idx];
-                                            const newTodo = this.state.newTodo;
-                                            this.setState({
-                                                newTodo: newTodo,
-                                                editingTodo: Object.assign({}, todo)});
-                                        }
-                                    }
-                                    />
+                                    <Row>
+                                        <Col>
+                                    <Table condensed={true}>
+                                    <tbody>
+                                        < TodoView todo = {todo}
+                                        onClick = {() => {
+                                                this.mode = ["edit",idx];
+                                                const newTodo = this.state.newTodo;
+                                                this.setState({
+                                                    newTodo: newTodo,
+                                                    editingTodo: Object.assign({}, todo)});
+                                            }
+                                        } onCheck = {this.handleCheck(idx)}
+                                        />
+                                    </tbody>
+                                    </Table>
+                                    </Col>
+                                    </Row>
                                 }
-                                {                                                
+                                {        
                                     this.mode[0] == "edit" && this.mode[1] == idx &&
-                                    <div>
-                                        <EditTodoView todo={this.state.editingTodo} onChange={this.handleEditChange} onDatePick={this.onEditDatePick}/>
-                                        <Button onClick={this.onEditTodo(idx)}>Save</Button>
-                                        <Button onClick={()=>this.mode[0]="list"}>Cancel</Button>
-                                        <Button onClick={this.onDelTodo(idx)}>Delete</Button>
-                                    </div>
+                                    < Row >
+                                    <Col>
+                                        <div>
+                                            <EditTodoView todo={this.state.editingTodo} onChange={this.handleEditChange} onDatePick={this.onEditDatePick}/>
+                                            <Button onClick={this.onEditTodo(idx)}>Save</Button>
+                                            <Button onClick={()=>this.mode[0]="list"}>Cancel</Button>
+                                            <Button onClick={this.onDelTodo(idx)}>Delete</Button>
+                                        </div>
+                                        </Col>
+                                    </Row>
                                 }
-                                </tbody>
-                                </Table>
-                            </Row>
+                                </div>
                                 )}
                             {
                                 (this.mode[0] == "list" || this.mode[0] == "edit") && 
                                 <Row>
-                                <Col>< Button bsStyle="link" onClick = {() => this.mode[0] = "add"} >+ Add Todo </Button></Col>
+                                    <Col>< Button bsStyle="link" onClick = {() => this.mode[0] = "add"} >+ Add Todo </Button></Col>
                                 </Row>
                             }
                     {
@@ -165,7 +188,6 @@ class TodoList extends React.Component {
     onNewTodo = () => {
         const store = this.props.store;
         store.addTodo(this.state.newTodo);
-        this.id += 1;
         this.resetNewTodo();
     };
 
@@ -188,15 +210,24 @@ class TodoList extends React.Component {
     onNewDatePick = (value, formattedValue) => {
         const todo = Object.assign({}, this.state.newTodo);
         const editingTodo = this.state.editingTodo;
-        todo.expireDate = value;
+        todo.expire_date = formattedValue;
         this.setState({newTodo: todo,editingTodo: editingTodo});
     };
 
-    onEditDatePick = (value) => {
+    onEditDatePick = (value, formattedValue) => {
         const todo = Object.assign({}, this.state.editingTodo);
         const newTodo = this.state.newTodo;
-        todo.expireDate = value;
+        todo.expire_date = formattedValue;
         this.setState({ newTodo: newTodo, editingTodo: todo });
+    }
+
+    handleCheck = (i) => {
+        return () => {
+            const store = this.props.store;
+            const todo = this.props.store.todos[i];
+            todo.finished = !todo.finished;
+            store.setTodo(i,todo);
+        }
     }
 
     handleAddChange = (e,info) => {
@@ -218,7 +249,6 @@ class TodoList extends React.Component {
 
     resetNewTodo = () => {
         const newTodo= Object.assign({}, this.defaultNewTodo);
-        newTodo.id = this.id;
         const editingTodo = this.state.editingTodo;
         this.setState({
             newTodo: newTodo,
@@ -228,19 +258,37 @@ class TodoList extends React.Component {
 }
 
 @observer
+class SortView extends React.Component {
+    render() {
+        const store = this.props.store;
+        return (
+            <div>
+                Sort by&nbsp;
+                <ButtonGroup>
+                    <Button onClick={()=>{store.sortBy="date";store.sortTodo();}}>Date</Button>
+                    <Button onClick={()=>{store.sortBy="priority";store.sortTodo();}}>Priority</Button>
+                </ButtonGroup>
+            </div>
+        )
+    }
+}
+
+@observer
 class TodoView extends React.Component {
     render() {
         const todo = this.props.todo;
         return (
             <tr>
                 <td className="checkbox">
-                    <Checkbox checked={todo.completed}></Checkbox>
+                    <Checkbox checked={todo.finished} onChange={this.props.onCheck}></Checkbox>
                 </td><td className="content" onClick={this.props.onClick}>
                     {todo.content}
                 </td><td className="expire-date" onClick={this.props.onClick}>
-                    {todo.expireDate}
+                    {todo.expire_date}
                 </td><td className="priority" onClick={this.props.onClick}>
-                    {todo.priority}
+                    {todo.priority == 1 && <Label bsStyle="danger">H</Label>}
+                    {todo.priority == 2 && <Label bsStyle = "warning" >M</Label>}
+                    {todo.priority == 3 && <Label bsStyle="info">L</Label>}
                 </td>
             </tr>
         );
@@ -261,11 +309,11 @@ class EditTodoView extends React.Component {
                 <Col>
                 < Form inline >
                 <FormGroup>
-                    <FormControl type="text" value={todo.content} onChange={(e) => onChange(e, "content")}></FormControl>
+                    <FormControl className="content-input" type="text" value={todo.content} onChange={(e) => onChange(e, "content")}></FormControl>
                 </FormGroup>
 
                 <FormGroup>
-                    <DatePicker dateFormat="YYYY/MM/DD" value={todo.expireDate} onChange={onDatePick} showClearButton={false}/>
+                        <DatePicker dateFormat="YYYY-MM-DD" value={todo.expire_date} onChange={onDatePick} showClearButton={false}/>
                 </FormGroup>
 
                 <FormGroup>

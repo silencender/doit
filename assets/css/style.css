@@ -7,6 +7,19 @@
     border-color: #414141;
 }
 
+.checkbox {
+    margin:0px;
+}
+
+.content {
+    width:500px;
+    text-align: left;
+}
+
+.content-input {
+    width: 537px;
+}
+
 .btn, .form-control {
     border-radius: 1px;
 }
