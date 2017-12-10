@@ -11,7 +11,7 @@ Pre work - Todo List
 - [x] 编辑一个待办事项的具体内容
 ![GIF](https://d26dzxoao6i3hh.cloudfront.net/items/0e3Q300S243W3s2V2c3T/Screen%20Recording%202017-12-10%20at%2008.28.12%20PM.gif)
 - [x] 列出所有的待办事项
-###可选
+### 可选
 - [ ] 列表界面支持翻页
 - [x] 待办事项可以设置优先级
 ![GIF](https://d26dzxoao6i3hh.cloudfront.net/items/0e3Q300S243W3s2V2c3T/Screen%20Recording%202017-12-10%20at%2008.28.12%20PM.gif)

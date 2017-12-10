@@ -26,6 +26,7 @@ SECRET_KEY = 'h4p4khwg$++d=$0u%2zco3^gn_yl65$x7rrme2(owf_$945r#a'
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    'doit.silenceender.com',
     'do.it',
     'localhost',
 ]
