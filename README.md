@@ -1,7 +1,7 @@
 # doit
 Pre work - Todo List
-##已完成功能
-###必选
+## 已完成功能
+### 必选
 - [x] 增加一个待办事项
 ![GIF](https://d26dzxoao6i3hh.cloudfront.net/items/0F1B1P0w2w290Y0i1K13/Screen%20Recording%202017-12-10%20at%2008.24.17%20PM.gif)
 - [x] 删除一个待办事项
@@ -12,7 +12,7 @@ Pre work - Todo List
 ![GIF](https://d26dzxoao6i3hh.cloudfront.net/items/0e3Q300S243W3s2V2c3T/Screen%20Recording%202017-12-10%20at%2008.28.12%20PM.gif)
 - [x] 列出所有的待办事项
 ###可选
-- [] 列表界面支持翻页
+- [ ] 列表界面支持翻页
 - [x] 待办事项可以设置优先级
 ![GIF](https://d26dzxoao6i3hh.cloudfront.net/items/0e3Q300S243W3s2V2c3T/Screen%20Recording%202017-12-10%20at%2008.28.12%20PM.gif)
 - [x] 待办事项可以设置expire date
